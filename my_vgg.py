@@ -23,8 +23,8 @@ class my_VGG(VGG):
     def __init__(self, vgg_name):
         super(my_VGG, self).__init__(vgg_name)
         self.features = self._make_layers(my_cfg[vgg_name])
-        self.classifier = my_Linear(25088, 4096)
-#        self.classifier = my_Linear(64, 20)
+#        self.classifier = my_Linear(25088, 4096)
+        self.classifier = my_Linear(64, 20)
 
         ###!!! Mandatory variables
         # _layers

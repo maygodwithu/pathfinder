@@ -215,11 +215,11 @@ class pathfinder():
 
 if __name__ == '__main__':
     from my_vgg import my_VGG
-    net = my_VGG('VGG16')
-    x = torch.randn(1,3,224,224)
-#    net = my_VGG('VGGT')
-#    x = torch.randn(1,3,16,16)
+#    net = my_VGG('VGG16')
+#    x = torch.randn(1,3,224,224)
+    net = my_VGG('VGGT')
+    x = torch.randn(1,3,16,16)
 
     pfind = pathfinder(net)
-    pfind.find_path(x, 2, 1000)   ## input, class, top-k
+    pfind.find_path(x, 2, 100)   ## input, class, top-k
 
