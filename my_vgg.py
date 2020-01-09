@@ -30,8 +30,8 @@ class my_VGG(VGG):
         #self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.avgpool = my_AvgPool2d(kernel_size=1, stride=1)
         self.classifier = nn.Sequential(
-#            my_Linear(512 * 7 * 7, 4096),
-            my_Linear(36, 4096),
+            my_Linear(512 * 7 * 7, 4096),
+#            my_Linear(36, 4096),
             my_ReLU(True),
             nn.Dropout(),
             my_Linear(4096, 4096),
