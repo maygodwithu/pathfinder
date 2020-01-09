@@ -38,7 +38,7 @@ class pathfinder():
     def get_pvalue(self, path):
         return float(path[0,1].item())  ## (position, value, addictvie info)
 
-    def get_input_value(self, path):
+    def get_input_value(self, path, x):
         cpos = int(path[0].item())
         if(cpos < 0):
             cpos = -1 * (cpos+1)  ## input has  only one..
@@ -56,7 +56,7 @@ class pathfinder():
                 if self._verbose:
                     print(name, shape, path[-1], file=sys.stderr)
             if(name == 'Input'):  ## input has no module
-                path[-1,1] = self.get_input_value(path[-1])
+                path[-1,1] = self.get_input_value(path[-1], x)
         return path
 
     def set_mode(self, x, m):
@@ -101,7 +101,7 @@ class pathfinder():
         for i in reversed(range(depth)):
             (name, value, mod) = self.net._layers[i]
             if(name == 'Input'):
-                out = self.get_input_value(path[i])
+                out = self.get_input_value(path[i], x)
             else:
                 out = mod.path_forward(out, path[i])
             # set value to path
@@ -137,7 +137,7 @@ class pathfinder():
     def outcheck(self, path):
         return self.make_key(path) in self.outhash
 
-    def find_topk(self, x, topk):
+    def find_topk(self, x, topk, fp=sys.stdout):
         while self.maxheap:
             short_path, v = self.get_maxpath()
             path = self.backward(x, short_path)  ## make full path
@@ -145,7 +145,7 @@ class pathfinder():
             ##
             self.push_rehash(short_path)           ## insert short path 
             self.push_rehash(path)           ## insert fullpath 
-            self.print_kpath(v, short_path, path)  ## print path to out file
+            self.print_kpath(v, short_path, path, fp)  ## print path to out file
             #print(v, self.make_key(short_path))
             #print(path)
             for i in range(path.shape[0]-1):  ## last layer is input 
@@ -171,7 +171,7 @@ class pathfinder():
         #    sp = heappop_max(maxheap)
         #    print(sp.value, sp.key)
     
-    def find_path(self, x, cls, topk):
+    def find_path(self, x, cls, topk, fp=sys.stdout):
         ##1. walk on normal path with saving info.
         print('>>first forward process (saving information) ', file=sys.stderr)
         y = self.first_pass(x)
@@ -186,39 +186,39 @@ class pathfinder():
         init_path[0,0] = cls          ## setting class
         #maxpath = self.net.backward(x, init_path)   ## parameter : path 
         maxpath = self.backward(x, init_path)   ## parameter : path 
-        self.print_path(maxpath)
+        self.print_path(maxpath, fp)
     
         ##4. find top-k max path
         print('>>Top-k process', file=sys.stderr)
         self.push_path(maxpath)
-        self.find_topk(x, topk)
+        self.find_topk(x, topk, fp)
 
     def print_status(self, state, tend=''):
         print(str("Top {} path found : {} heap size : {} rehash size. {}                            \r".format(self.pcount, len(self.maxheap), len(self.rehash), state)), end=tend, file=sys.stderr)
 
-    def print_path(self, path):
-        print('=== max path ===')
-        print('[flattened pos]\t[shape]\t[name]\t[value]')
-        for i in range(len(net._layers)):
+    def print_path(self, path, fp=sys.stdout):
+        print('#=== max path ===', file=fp)
+        print('#\t[flattened pos]\t[shape]\t[name]\t[value]', file=fp)
+        for i in range(len(self.net._layers)):
             name = self.net._layers[i][0]
             shape = self.net._layers[i][1]
             pos = path[i,0].item()
             val = path[i,1].item()
-            print(pos,  '\t', shape, '\t', name, '\t', val)
+            print('#\t', pos,  '\t', shape, '\t', name, '\t', val, file=fp)
 
-    def print_kpath(self, value, short_path, path):
+    def print_kpath(self, value, short_path, path, fp=sys.stderr):
         self.print_status("                    ")
         #print(value, self.make_key(path), self.make_key(short_path))
-        print(value, self.make_key(path))
+        print(value, self.make_key(path), file=fp)
         self.push_outhash(path)          ## insert outhash
 
 
 if __name__ == '__main__':
-    from my_vgg import my_VGG
-#    net = my_VGG('VGG16')
-#    x = torch.randn(1,3,224,224)
-    net = my_VGG('VGGT')
-    x = torch.randn(1,3,16,16)
+    import my_vgg 
+    net = my_vgg.vgg16(pretrained=True)
+    x = torch.randn(1,3,224,224)
+#    net = my_vgg.vggt(pretrained=True)
+#    x = torch.randn(1,3,16,16)
 
     pfind = pathfinder(net)
     pfind.find_path(x, 2, 100)   ## input, class, top-k
