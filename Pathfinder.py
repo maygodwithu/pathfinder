@@ -217,7 +217,7 @@ class pathfinder():
         #    sp = heappop_max(maxheap)
         #    print(sp.value, sp.key)
     
-    def find_path(self, x, cls, topk, fp=sys.stdout, greedy=False):
+    def find_path(self, x, Class=0, Topk=10, File=sys.stdout, Greedy=False):
         ##1. walk on normal path with saving info.
         print('>>first forward process (saving information) ', file=sys.stderr)
         y = self.first_pass(x)
@@ -229,18 +229,18 @@ class pathfinder():
         ##3. find max path.. 
         print('>>backword process ( making the max path)', file=sys.stderr)
         init_path = torch.zeros(1,4)  ## make initial path [[class, value, weight, weight2]]
-        init_path[0,0] = cls          ## setting class
+        init_path[0,0] = Class          ## setting class
         #maxpath = self.net.backward(x, init_path)   ## parameter : path 
         maxpath = self.backward(x, init_path)   ## parameter : path 
-        self.print_path(maxpath, fp)
+        self.print_path(maxpath, filep)
     
         ##4. find top-k max path
         print('>>Top-k process', file=sys.stderr)
         self.push_path(maxpath)
         if greedy:
-            self.find_greedy_topk(x, topk, fp)
+            self.find_greedy_topk(x, Topk, File)
         else:
-            self.find_topk(x, topk, fp)
+            self.find_topk(x, Topk, File)
 
     def print_status(self, state, tend=''):
         print(str("Top {} unique path found, {} path found : {} heap size : {} rehash size. {}                            \r".format(self.upcount, self.pcount, len(self.maxheap), len(self.rehash), state)), end=tend, file=sys.stderr)
