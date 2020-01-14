@@ -68,7 +68,7 @@ class my_Linear(nn.Module):
                 tweight[:,py] = self.weight[:,py].data 
                 tx.append(F.linear(max_input, tweight, bias))
                 tx_min.append(F.linear(min_input, tweight, bias))
-                if(py % 1000 == 0):
+                if(py % 100 == 0):
                     print('processed node : %d \r' % py, file=sys.stderr, end='')
                 if self._verbose:
                     print('===iter ', py, ' ===')

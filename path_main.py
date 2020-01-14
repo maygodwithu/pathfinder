@@ -10,5 +10,5 @@ if __name__ == '__main__':
     fp = open("maxpath.out",'w') ## path output
     #fp = sys.stdout	         ##
     x = torch.randn(1,3,224,224)     ## input
-    pfind.find_path(x, 2, 10, fp)   ## input, class, top-k
+    pfind.find_path(x, 2, 100, fp, greedy=True)   ## input, class, top-k
 

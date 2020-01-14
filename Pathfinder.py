@@ -20,7 +20,9 @@ class pathfinder():
         self.maxheap = []   ## max heap
         self.rehash = {}    ## for redundant check
         self.outhash = {}    ## for redundant check
+        self.inhash = {}    ## for input-pos check
         self.pcount = 0     ## path count
+        self.upcount = 0     ## path count
 
     def first_pass(self, x):
         #self.net.set_mode(x, 1)
@@ -123,6 +125,10 @@ class pathfinder():
     def push_outhash(self, path):
         self.outhash[self.make_key(path)] = 1
 
+    def push_inhash(self, path):
+        input_pos = int(path[-1, 0].item())
+        self.inhash[input_pos] = 1
+
     def push_path(self, path):
         heappush_max(self.maxheap, (SP(path, self.get_pvalue(path))))
         self.push_rehash(path)
@@ -136,6 +142,9 @@ class pathfinder():
 
     def outcheck(self, path):
         return self.make_key(path) in self.outhash
+
+    def incheck(self, path):
+        return int(path[-1,0].item()) in self.inhash
 
     def find_topk(self, x, topk, fp=sys.stdout):
         while self.maxheap:
@@ -163,15 +172,52 @@ class pathfinder():
                 #print(i, '\'th path : ', len(v_paths), ' path added to heap', file=sys.stderr)
                 
                 self.print_status(str("{}\'th layer:{} added to heap".format(i, len(v_paths))))
-            self.pcount += 1
-            if(self.pcount >= topk): break
+            self.upcount += 1
+            if(self.upcount >= topk): break
+       
+        self.print_status('\n')
+        #while maxheap:
+        #    sp = heappop_max(maxheap)
+        #    print(sp.value, sp.key)
+
+    def find_greedy_topk(self, x, topk, fp=sys.stdout):
+        while self.maxheap:
+            short_path, v = self.get_maxpath()
+            path = self.backward(x, short_path)  ## make full path
+            if(self.outcheck(path)): continue    ## get outpath already
+            if(self.incheck(path)):              ## input check
+                self.print_kpath(v, short_path, path, fp)
+                continue
+            ##
+            self.push_rehash(short_path)           ## insert short path 
+            self.push_rehash(path)           ## insert fullpath 
+            self.print_kpath(v, short_path, path, fp)  ## print path to out file
+            #print(v, self.make_key(short_path))
+            #print(path)
+            for i in range(path.shape[0]-1):  ## last layer is input 
+                if(self.recheck(path[:i+1])): continue         
+                self.push_rehash(path[:i+1])     ## subset must be in HASH
+                v_paths = self.backtraverse(path, i, x, (i+2)!=path.shape[0])
+                if(v_paths is None): 
+                    if self._verbose:
+                        print(i, '\'th path :  no path foudn', file=sys.stderr)
+                    continue
+                for (v, t_path) in v_paths:
+                    if(self.recheck(t_path)): continue         
+                    self.push_path(t_path)
+                #if self._verbose:
+                #print(i, '\'th path : ', len(v_paths), ' path added to heap', file=sys.stderr)
+                
+                self.print_status(str("{}\'th layer:{} added to heap".format(i, len(v_paths))))
+            self.upcount += 1
+            if(self.upcount >= topk): break
        
         self.print_status('\n')
         #while maxheap:
         #    sp = heappop_max(maxheap)
         #    print(sp.value, sp.key)
     
-    def find_path(self, x, cls, topk, fp=sys.stdout):
+    def find_path(self, x, cls, topk, fp=sys.stdout, greedy=False):
         ##1. walk on normal path with saving info.
         print('>>first forward process (saving information) ', file=sys.stderr)
         y = self.first_pass(x)
@@ -191,10 +237,13 @@ class pathfinder():
         ##4. find top-k max path
         print('>>Top-k process', file=sys.stderr)
         self.push_path(maxpath)
-        self.find_topk(x, topk, fp)
+        if greedy:
+            self.find_greedy_topk(x, topk, fp)
+        else:
+            self.find_topk(x, topk, fp)
 
     def print_status(self, state, tend=''):
-        print(str("Top {} path found : {} heap size : {} rehash size. {}                            \r".format(self.pcount, len(self.maxheap), len(self.rehash), state)), end=tend, file=sys.stderr)
+        print(str("Top {} unique path found, {} path found : {} heap size : {} rehash size. {}                            \r".format(self.upcount, self.pcount, len(self.maxheap), len(self.rehash), state)), end=tend, file=sys.stderr)
 
     def print_path(self, path, fp=sys.stdout):
         print('#=== max path ===', file=fp)
@@ -207,10 +256,12 @@ class pathfinder():
             print('#\t', pos,  '\t', shape, '\t', name, '\t', val, file=fp)
 
     def print_kpath(self, value, short_path, path, fp=sys.stderr):
+        self.pcount += 1
         self.print_status("                    ")
         #print(value, self.make_key(path), self.make_key(short_path))
         print(value, self.make_key(path), file=fp)
         self.push_outhash(path)          ## insert outhash
+        self.push_inhash(path)
 
 
 if __name__ == '__main__':
