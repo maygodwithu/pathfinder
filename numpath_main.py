@@ -25,7 +25,7 @@ if __name__ == '__main__':
     net = my_vgg.vgg16(pretrained=True)
     pfind = pathfinder(net)      ## pathfinder initialize
 
-    fp = open("./result/maxpath_1000.out",'w') ## path output
+    #fp = open("./result/maxpath_1000_ng.out",'w') ## path output
 
     ## input : ILSVRC2012_val_00023642.JPEG, 376
     #x = torch.randn(1,3,224,224)     ## input
@@ -33,5 +33,7 @@ if __name__ == '__main__':
     image = torch.unsqueeze(image, 0)     ## input
 
     ##
-    pfind.find_path(image, Class=cls, Topk=1000, File=fp, Greedy=True)   ## input, class, top-k
+    #pfind.find_path(image, Class=cls, Topk=10, File=fp, Greedy=False, FlushHeap=False)   ## input, class, top-k
+    xgrad = pfind.find_numpath(image, Class=cls)
+    print(xgrad)
 

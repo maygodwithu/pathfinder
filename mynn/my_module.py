@@ -104,6 +104,11 @@ class my_Linear(nn.Module):
         elif(self._mode == 1): ## normal mode
             return F.linear(input, self.weight, self.bias)
 
+        #elif(self._mode == 9): ## numpath mode
+            #tweight = torch.ones(self.weight.shape)
+            #tweight *= 0.1
+            #return F.linear(input, tweight, self.bias)
+ 
         else:
             return F.linear(input, self.weight, self.bias)
         
@@ -237,6 +242,9 @@ class my_ReLU(nn.Module):
 
             return torch.cat([x, x_min])
             #return x
+        elif(self._mode == 9):
+            x = input * self.relu_index ## make output
+            return x 
         else: 
             return F.relu(input, inplace=self.inplace)
 
@@ -481,6 +489,12 @@ class my_Conv2d(_ConvNd):
                 print('=== conv mode1 ===')
                 print('save input shape = ', self.input_shape)
             return self._conv_forward(input, self.weight)
+
+        elif(self._mode == 9):  ## numpath mode
+            tweight = torch.ones(self.weight.shape)
+            tweight *= 0.1
+            return self._conv_forward(input, tweight)
+
         else: 
             return self._conv_forward(input, self.weight)
  
@@ -631,8 +645,10 @@ class my_Conv2d(_ConvNd):
         c_size = self.input_shape[2]*self.input_shape[3]
         tz = pos // c_size
         residual = pos % c_size
-        tx = residual // self.input_shape[2]
-        ty = residual % self.input_shape[2]
+        #tx = residual // self.input_shape[2]
+        #ty = residual % self.input_shape[2]
+        tx = residual // self.input_shape[3]
+        ty = residual % self.input_shape[3]
         return tz, tx, ty
 
     def modify_position(self, org, mv_x, mv_y, diff):
@@ -658,24 +674,28 @@ class my_Conv2d(_ConvNd):
             under_pos = -1 * (under_pos+1)
 
         ##3. make initial pair (weight, underpos)
-        p = []       ## candidate
+        #p = []       ## candidate
+        p = torch.zeros(self.weight[0].shape).flatten()
         ws = self.weight.shape
         c_size = self.input_shape[2]*self.input_shape[3]
         u_jump = (self.input_shape[2] - ws[2])  ## input x size
         if(u_jump < 0):
             print("!!ERROR : input is smaller than conv-weight")
 
+        pi = 0
         for wz in range(ws[1]):  # weight-z 
            un = c_size * wz
            for wx in range(ws[2]):  # weight-x
                for wy in range(ws[3]):  # weight-y
-                   p.append(un)
+                   #p.append(un)
+                   p[pi] = un
+                   pi += 1
                    un += 1 
                un = un + u_jump
 
         ## 4. modify position
         under_z, under_x, under_y = self.get_input_position(under_pos)
-        zero_z, zero_x, zero_y = self.get_input_position(p[rpos])
+        zero_z, zero_x, zero_y = self.get_input_position(int(p[rpos].item()))
 
         mv_x = under_x - zero_x   ## mv x 
         mv_y = under_y - zero_y   ## mv y
@@ -691,8 +711,19 @@ class my_Conv2d(_ConvNd):
             print("!!ERROR : make conv candidate error.") 
 
         diff = under_pos - p[rpos] # 
-        for wn in range(len(p)):
-            p[wn] = self.modify_position(p[wn], mv_x, mv_y, diff)
+
+        ### new approach
+        p = p + diff
+        ws = self.weight.shape
+        for i in range(ws[2]*ws[3]):
+             outrange = self.modify_position(p[i]-diff, mv_x, mv_y, diff) # aleady plus diff
+             if(outrange == -1):
+                 z, x, y = self.get_weight_position(i)  
+                 p.reshape(ws[1], ws[2], ws[3])[:,x,y] = -1
+
+        ### new approach end
+        #for wn in range(len(p)):
+            #p[wn] = self.modify_position(p[wn], mv_x, mv_y, diff)
 
         if self._cverbose:
             print('weight shape = ', ws)
@@ -707,7 +738,7 @@ class my_Conv2d(_ConvNd):
         candi = []
         for wn in range(len(p)):
             t_weight = self.weight[out_channel].flatten()[wn]
-            t_pos = p[wn]
+            t_pos = int(p[wn].item())
             if(t_pos < 0): continue  ## out of range
             candi.append(torch.tensor([t_pos, t_weight, wn]))      
             if(not_input):  ## input has no second source ( minimum)
@@ -970,9 +1001,22 @@ class my_MaxPool2d(_MaxPoolNd):
                 print('=== Pool index ===')
                 print(x[1])
 
+            self._value = x[0].data
             self._index = x[1].data
 
             return x[0]
+
+        elif(self._mode == 9):
+            merged = []
+            xs = self._value.shape
+            for tx in range(xs[1]): # select values of max indexes. 
+                pooled = torch.index_select(input[0][tx].flatten(), 0, self._index[0][tx].flatten())
+                merged.append(pooled)
+
+            #out = torch.stack(merged).view(xs[0], xs[1], xs[2], xs[3])   ## reshape
+            out = torch.stack(merged).reshape(xs)   ## reshape
+            return out
+ 
         else:  
             return F.max_pool2d(input, self.kernel_size, self.stride,
                             self.padding, self.dilation, self.ceil_mode,
@@ -1107,6 +1151,12 @@ class my_AvgPool2d(_AvgPoolNd):
                 print(self._index_min)
                
             return torch.cat([out, out_min]) ##
+
+        elif(self._mode == 9):
+            divisor = self.kernel_size * self.kernel_size
+            self._divisor = divisor  ## save divisor for path_forward
+            out = input / divisor  ## make output with MAXPOOL instead of AVGPOOL
+            return out
 
         else: 
             out = F.avg_pool2d(input, self.kernel_size, self.stride,
