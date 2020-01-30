@@ -305,15 +305,14 @@ class pathfinder():
             #print(x.grad)
     
         ##2. find num path.. 
-        print('>>find numpath process ( making the max path)', file=sys.stderr)
+        print('>>find numpath process', file=sys.stderr)
         x = Variable(x, requires_grad=True)
         #print(img)
         out = self.num_pass(x)
         out_c = out[0,Class]
         out_c.backward()
         #print(out)
-        x_grad = torch.squeeze(x.grad) 
-        print(x_grad)
+        #x_grad = torch.squeeze(x.grad) 
 
         return x.grad
     

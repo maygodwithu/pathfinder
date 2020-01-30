@@ -1,6 +1,8 @@
 import sys
 import torch
 import my_vgg
+import my_resnet
+import my_googlenet
 from Pathfinder import pathfinder
 import torchvision.transforms as transforms
 from PIL import Image
@@ -22,18 +24,18 @@ def img_data():
 
 
 if __name__ == '__main__':
-    net = my_vgg.vgg16(pretrained=True)
+    #net = my_vgg.vgg16(pretrained=True)
+    #net = my_resnet.resnet18(pretrained=True)
+    #net = my_resnet.resnet34(pretrained=True)
+    net = my_googlenet.googlenet(pretrained=True)
     pfind = pathfinder(net)      ## pathfinder initialize
 
-    #fp = open("./result/maxpath_1000_ng.out",'w') ## path output
-
     ## input : ILSVRC2012_val_00023642.JPEG, 376
-    #x = torch.randn(1,3,224,224)     ## input
     image, cls = img_data()
     image = torch.unsqueeze(image, 0)     ## input
 
     ##
-    #pfind.find_path(image, Class=cls, Topk=10, File=fp, Greedy=False, FlushHeap=False)   ## input, class, top-k
     xgrad = pfind.find_numpath(image, Class=cls)
     print(xgrad)
-
+    #print(len(xgrad[xgrad<0]))
+    #print(len(xgrad[xgrad>0]))

@@ -38,8 +38,8 @@ class my_Linear(nn.Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input):
-        tweight = self.weight.clone()
         if(self._mode == 2):  ## find path
+            tweight = self.weight.clone()
             if(input.shape[0] > 1):  ## max & min input
                 max_input = input[0].clone().unsqueeze(0)  ## max
                 min_input = input[1].clone().unsqueeze(0)  ## min
@@ -839,8 +839,8 @@ class _BatchNorm(_NormBase):
                 print('org bias = ', self.bias)
                 print('org weight = ', self.weight) 
                 print('org var = ', self.running_var) 
-
             return x
+
         elif(self._mode == 3): ## path_forward
             t_running_mean = self.running_mean.clone()
             t_bias = self.bias.clone()
@@ -850,8 +850,11 @@ class _BatchNorm(_NormBase):
                 input, t_running_mean, self.running_var, self.weight, t_bias,
                 False,
                 exponential_average_factor, self.eps)
-
             return x
+
+        elif(self._mode == 9):
+            return input
+
         else:
             return F.batch_norm(
                 input, self.running_mean, self.running_var, self.weight, self.bias,
@@ -1229,4 +1232,39 @@ class my_AvgPool2d(_AvgPoolNd):
 
     def back_candidate(self, path, underpath, not_input):
         return None  ## no candidate 
+
+class _AdaptiveAvgPoolNd(nn.Module):
+    __constants__ = ['output_size']
+
+    def __init__(self, output_size):
+        super(_AdaptiveAvgPoolNd, self).__init__()
+        self.output_size = output_size
+        self._mode = 0
+        self._value = None
+
+    def setMode(self, mode):
+        self._mode = mode
+
+    def getOutShape(self):
+        if(self._value is None): return None
+        return self._value.shape
+
+    def extra_repr(self):
+        return 'output_size={}'.format(self.output_size)
+
+
+class my_AdaptiveAvgPool2d(_AdaptiveAvgPoolNd):
+    def forward(self, input):
+        if(self._mode == 1):
+            x = F.adaptive_avg_pool2d(input, self.output_size)
+            self._value = x.data
+            return x
+        elif(self._mode == 9):
+            #assert(self.output_size == 1)
+            return F.adaptive_avg_pool2d(input, self.output_size)
+
+        else:
+            return F.adaptive_avg_pool2d(input, self.output_size)
+
+
 
