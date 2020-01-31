@@ -222,7 +222,7 @@ class GoogLeNet(nn.Module):
                 for key, module in m._modules.items():
                     if(key is 'branch1' or key is 'branch4'):
                         print(key, ' ', end='')
-                        self.setConvFixWeight(module.children(), 0.01)
+                        self.setConvFixWeight(module.children(), 0.01*0.01)
           
     def setConvFixWeight(self, children, w):
         for m in children:

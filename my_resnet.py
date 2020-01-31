@@ -56,12 +56,13 @@ class BasicBlock(nn.Module):
         self.relu2 = my_ReLU(inplace=True)
         self.stride = stride
         self._mode = 0
+        self._fix_weight = 0.01
 
     def setMode(self, mode):
         self._mode = mode
 
     def forward(self, x):
-        skip_r = 0.01
+        skip_r = self._fix_weight * self._fix_weight
         identity = x
 
         out = self.conv1(x)
@@ -72,7 +73,7 @@ class BasicBlock(nn.Module):
         out = self.bn2(out)
 
         if self.downsample is not None:
-            skip_r = 0.1
+            skip_r = self._fix_weight
             identity = self.downsample(x)
 
         if(self._mode == 9):
@@ -107,12 +108,13 @@ class Bottleneck(nn.Module):
         self.relu3 = my_ReLU(inplace=True)
         self.stride = stride
         self._mode = 0
-
+        self._fix_weight = 0.01
+        
     def setMode(self, mode):
         self._mode = mode
 
     def forward(self, x):
-        skip_r = 0.001
+        skip_r = self._fix_weight * self._fix_weight * self._fix_weight
         identity = x
 
         out = self.conv1(x)
@@ -127,7 +129,7 @@ class Bottleneck(nn.Module):
         out = self.bn3(out)
 
         if self.downsample is not None:
-            skip_r = 0.01
+            skip_r = self._fix_weight * self._fix_weight
             identity = self.downsample(x)
 
         if(self._mode == 9):

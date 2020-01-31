@@ -26,9 +26,10 @@ def img_data():
 
 if __name__ == '__main__':
     #net = my_vgg.vgg16(pretrained=True)
-    net = my_resnet.resnet18(pretrained=True)
-    #net = my_resnet.resnet34(pretrained=True)
+    #net = my_resnet.resnet18(pretrained=True)
+    net = my_resnet.resnet34(pretrained=True)
     #net = my_googlenet.googlenet(pretrained=True)
+    net.eval()
     pfind = pathfinder(net)      ## pathfinder initialize
 
     ## input : ILSVRC2012_val_00023642.JPEG, 376

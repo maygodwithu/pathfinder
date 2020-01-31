@@ -327,7 +327,7 @@ class my_Conv2d(_ConvNd):
         self._verbose = False
         self._bverbose = False
         self._cverbose = False
-        self._fix_weight = 0.1
+        self._fix_weight = 0.01
         super(my_Conv2d, self).__init__(
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, _pair(0), groups, bias, padding_mode)
