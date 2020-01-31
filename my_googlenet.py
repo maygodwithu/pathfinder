@@ -216,8 +216,22 @@ class GoogLeNet(nn.Module):
         self.fill_sub_layers(self.children())
         self._layers.append(('Input', x.shape, None))
 
-        #for (name, shape, m) in self._layers:
-            #print(name, m)
+        ## set branch1, branch4 fix weight 0.01
+        for (name, shape, m) in self._layers:
+            if(name is 'Inception'):
+                for key, module in m._modules.items():
+                    if(key is 'branch1' or key is 'branch4'):
+                        print(key, ' ', end='')
+                        self.setConvFixWeight(module.children(), 0.01)
+          
+    def setConvFixWeight(self, children, w):
+        for m in children:
+            if(list(m.children()) == []):
+                if(isinstance(m, my_Conv2d)):
+                    print(m._get_name(), "set weight = ", w)
+                    m.setFixWeight(w)
+            else:
+                self.setConvFixWeight(m.children(), w)
 
     def fill_sub_layers(self, children):
         i=len(self._layers)

@@ -6,6 +6,7 @@ import my_googlenet
 from Pathfinder import pathfinder
 import torchvision.transforms as transforms
 from PIL import Image
+import time
 
 def img_data():
     ## 
@@ -25,9 +26,9 @@ def img_data():
 
 if __name__ == '__main__':
     #net = my_vgg.vgg16(pretrained=True)
-    #net = my_resnet.resnet18(pretrained=True)
+    net = my_resnet.resnet18(pretrained=True)
     #net = my_resnet.resnet34(pretrained=True)
-    net = my_googlenet.googlenet(pretrained=True)
+    #net = my_googlenet.googlenet(pretrained=True)
     pfind = pathfinder(net)      ## pathfinder initialize
 
     ## input : ILSVRC2012_val_00023642.JPEG, 376
@@ -35,7 +36,9 @@ if __name__ == '__main__':
     image = torch.unsqueeze(image, 0)     ## input
 
     ##
+    start_time = time.time()
     xgrad = pfind.find_numpath(image, Class=cls)
     print(xgrad)
+    print("---{}s seconds---".format(time.time()-start_time))
     #print(len(xgrad[xgrad<0]))
     #print(len(xgrad[xgrad>0]))

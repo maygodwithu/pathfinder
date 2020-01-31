@@ -327,12 +327,16 @@ class my_Conv2d(_ConvNd):
         self._verbose = False
         self._bverbose = False
         self._cverbose = False
+        self._fix_weight = 0.1
         super(my_Conv2d, self).__init__(
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, _pair(0), groups, bias, padding_mode)
 
     def setMode(self, m):
         self._mode = m
+
+    def setFixWeight(self, w):
+        self._fix_weight = w
 
     def _conv_forward(self, input, weight):
         if self.padding_mode == 'circular':
@@ -492,7 +496,8 @@ class my_Conv2d(_ConvNd):
 
         elif(self._mode == 9):  ## numpath mode
             tweight = torch.ones(self.weight.shape)
-            tweight *= 0.1
+            #tweight *= 0.1
+            tweight *= self._fix_weight
             return self._conv_forward(input, tweight)
 
         else: 
