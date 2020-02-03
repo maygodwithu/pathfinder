@@ -495,9 +495,12 @@ class my_Conv2d(_ConvNd):
             return self._conv_forward(input, self.weight)
 
         elif(self._mode == 9):  ## numpath mode
-            tweight = torch.ones(self.weight.shape)
-            #tweight *= 0.1
-            tweight *= self._fix_weight
+            #tweight = torch.ones(self.weight.shape)
+            #tweight *= self._fix_weight
+
+            tweight = self.weight.clone()
+            tweight *= 0
+            tweight += self._fix_weight
             return self._conv_forward(input, tweight)
 
         else: 
